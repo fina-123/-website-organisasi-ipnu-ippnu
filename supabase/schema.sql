@@ -64,15 +64,27 @@ create index if not exists idx_members_role on members (role);
 -- Enable Row Level Security
 alter table members enable row level security;
 
--- Policy: Users can read their own data, Admins can read all
-create policy "Users can view own profile" on members
-  for select using (auth.uid() = auth_id or exists (
+-- Policy: Semua user yang login bisa membaca data members (untuk cek role)
+create policy "Anyone authenticated can read members"
+  on members for select
+  using (auth.role() = 'authenticated');
+
+-- Policy: Hanya admin yang bisa insert/update/delete members
+create policy "Only admins can insert members"
+  on members for insert
+  with check (exists (
     select 1 from members where auth_id = auth.uid() and role = 'admin'
   ));
 
--- Policy: Only admins can insert/update members
-create policy "Admins can manage members" on members
-  for all using (exists (
+create policy "Only admins can update members"
+  on members for update
+  using (exists (
+    select 1 from members where auth_id = auth.uid() and role = 'admin'
+  ));
+
+create policy "Only admins can delete members"
+  on members for delete
+  using (exists (
     select 1 from members where auth_id = auth.uid() and role = 'admin'
   ));
 

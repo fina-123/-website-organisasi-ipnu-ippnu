@@ -26,13 +26,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isSupabaseConfigured && supabase) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          const { data: memberData } = await supabase
+          const { data: memberData, error: memberError } = await supabase
             .from('members')
             .select('role, full_name')
             .eq('auth_id', session.user.id)
             .single();
           
-          const role = memberData?.role || 'user';
+          const role = !memberError && memberData?.role ? memberData.role : 'user';
           const newUser = { id: session.user.id, email: session.user.email!, role: role as 'user' | 'admin', name: memberData?.full_name };
           setUser(newUser);
           localStorage.setItem('user', JSON.stringify(newUser));
@@ -50,13 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isSupabaseConfigured && supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
-          const { data: memberData } = await supabase
+          const { data: memberData, error: memberError } = await supabase
             .from('members')
             .select('role, full_name')
             .eq('auth_id', session.user.id)
             .single();
           
-          const role = memberData?.role || 'user';
+          const role = !memberError && memberData?.role ? memberData.role : 'user';
           const newUser = { id: session.user.id, email: session.user.email!, role: role as 'user' | 'admin', name: memberData?.full_name };
           setUser(newUser);
           localStorage.setItem('user', JSON.stringify(newUser));

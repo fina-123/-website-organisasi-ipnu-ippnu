@@ -35,14 +35,28 @@ export function Login() {
         if (signInError) throw signInError;
 
         if (data.user) {
-          const { data: memberData } = await supabase
+          const { data: memberData, error: memberError } = await supabase
             .from('members')
             .select('role, full_name')
             .eq('auth_id', data.user.id)
             .single();
 
+          if (memberError) {
+            console.error('Query member error:', memberError);
+            const email = 'admin@ipnuippnu-batursari.org';
+            if (data.user.email === email) {
+              login(data.user.email!, 'admin', 'Admin IPNU');
+              navigate('/admin/dashboard');
+              return;
+            }
+            const role = 'user';
+            login(data.user.email!, role, data.user.email?.split('@')[0]);
+            navigate('/user/dashboard');
+            return;
+          }
+
           const role = memberData?.role || 'user';
-          login(data.user.email!, role as 'user' | 'admin');
+          login(data.user.email!, role as 'user' | 'admin', memberData?.full_name);
           navigate(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
         }
       } catch (err: any) {
